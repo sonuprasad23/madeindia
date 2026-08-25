@@ -1,0 +1,87 @@
+workflows:
+  android-demo:
+    name: Rakshak – Android (debug/unsigned demo build)
+    max_build_duration: 30
+    environment:
+      flutter: 3.38.5
+      # No `android_signing` entry here: this demo workflow relies on the
+      # project's default release build type, which is signed with the
+      # Android debug key (see android/app/build.gradle.kts) — enough to
+      # install and test, but not a real release signature. Add an
+      # `android_signing` reference (configured in the Codemagic UI, never
+      # in this file) once a real keystore exists for release builds.
+      vars:
+        # Placeholders only — real values are set as encrypted Codemagic
+        # environment variables, never committed to git. See .env.example.
+        ADMIN_DEMO_USERNAME: admin
+        ADMIN_DEMO_PASSWORD: Rakshak@Demo123
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+    scripts:
+      - name: Install Flutter dependencies
+        script: flutter pub get
+
+      - name: Verify formatting
+        script: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze
+        script: flutter analyze
+
+      - name: Run tests
+        script: flutter test --coverage
+
+      - name: Build Android APK (unsigned demo)
+        script: |
+          flutter build apk --release \
+            --dart-define=ADMIN_DEMO_USERNAME="$ADMIN_DEMO_USERNAME" \
+            --dart-define=ADMIN_DEMO_PASSWORD="$ADMIN_DEMO_PASSWORD"
+
+      - name: Build Android App Bundle (unsigned demo)
+        script: |
+          flutter build appbundle --release \
+            --dart-define=ADMIN_DEMO_USERNAME="$ADMIN_DEMO_USERNAME" \
+            --dart-define=ADMIN_DEMO_PASSWORD="$ADMIN_DEMO_PASSWORD"
+
+    artifacts:
+      - build/app/outputs/**/*.apk
+      - build/app/outputs/**/*.aab
+      - flutter_drive.log
+
+    # Add a `publishing:` block (e.g. email notifications) once this
+    # project has a real recipient to notify — intentionally omitted here
+    # rather than shipping a placeholder address.
+
+  # Placeholder for a future signed release workflow. Uncomment and wire up
+  # a real keystore + Play Store credentials in the Codemagic UI when this
+  # prototype graduates to an actual release pipeline. Left commented so
+  # the file documents the intended structure without implying it is
+  # already active.
+  #
+  # android-release:
+  #   name: Rakshak – Android (signed release)
+  #   environment:
+  #     flutter: 3.38.5
+  #     android_signing:
+  #       - rakshak_release_keystore
+  #     vars:
+  #       PACKAGE_NAME: "com.rakshak.app.rakshak"
+  #   scripts:
+  #     - name: Install dependencies
+  #       script: flutter pub get
+  #     - name: Build signed App Bundle
+  #       script: flutter build appbundle --release
+  #   artifacts:
+  #     - build/app/outputs/**/*.aab
+  #   publishing:
+  #     google_play:
+  #       credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+  #       track: internal
+
+  # iOS is not yet configured for this demo (no Xcode project has been
+  # exercised for it in this environment), but the project is structured
+  # so an `ios-demo` workflow can be added the same way once iOS platform
+  # files are added and a Codemagic iOS signing setup is available.

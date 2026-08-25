@@ -1,0 +1,92 @@
+{
+  "@@locale": "mr",
+
+  "appName": "Rakshak",
+  "appTagline": "सायबर सुरक्षा आणि सायबर गुन्हे सहाय्य",
+
+  "navHome": "मुख्यपृष्ठ",
+  "navProtect": "सुरक्षा",
+  "navReport": "तक्रार करा",
+  "navCases": "प्रकरणे",
+  "navProfile": "प्रोफाइल",
+
+  "goodMorning": "सुप्रभात",
+  "goodAfternoon": "शुभ दुपार",
+  "goodEvening": "शुभ संध्याकाळ",
+  "yourDashboardSubtitle": "तुमचा सायबर सुरक्षा डॅशबोर्ड",
+
+  "cyberSafety": "सायबर सुरक्षा",
+  "protectionActive": "सुरक्षा सक्रिय आहे",
+  "linkProtection": "लिंक सुरक्षा",
+  "safeLinkViewer": "सेफ लिंक व्ह्यूअर",
+  "on": "चालू",
+  "off": "बंद",
+
+  "actionCheckLink": "लिंक तपासा",
+  "actionScanQr": "QR स्कॅन करा",
+  "actionReportIncident": "घटना नोंदवा",
+  "actionSaveEvidence": "पुरावा जतन करा",
+
+  "myCases": "माझी प्रकरणे",
+  "recentActivity": "अलीकडील क्रियाकलाप",
+
+  "riskSafeLabel": "कोणताही ज्ञात धोका आढळला नाही",
+  "riskSuspiciousLabel": "संशयास्पद लिंक",
+  "riskDangerousLabel": "धोकादायक लिंक",
+  "riskUnknownLabel": "निश्चित करता आले नाही",
+
+  "viewSafely": "सुरक्षितपणे पहा",
+  "openAnyway": "तरीही उघडा",
+  "dontOpen": "उघडू नका",
+  "goBack": "मागे जा",
+  "openInBrowser": "Chrome मध्ये उघडा",
+  "retry": "पुन्हा प्रयत्न करा",
+  "cancel": "रद्द करा",
+  "confirm": "पुष्टी करा",
+  "submit": "सबमिट करा",
+  "continueLabel": "सुरू ठेवा",
+  "continueWithoutThisInformation": "या माहितीशिवाय सुरू ठेवा",
+  "save": "जतन करा",
+  "edit": "संपादित करा",
+  "delete": "हटवा",
+  "addEvidence": "पुरावा जोडा",
+  "next": "पुढे",
+  "back": "मागे",
+
+  "whyWasThisFlagged": "हे संशयास्पद का मानले गेले?",
+  "demoThreatIntelligence": "डेमो थ्रेट इंटेलिजन्स",
+
+  "appearance": "स्वरूप",
+  "themeLight": "लाइट",
+  "themeDark": "डार्क",
+  "themeSystem": "सिस्टम",
+  "language": "भाषा",
+
+  "askRakshak": "रक्षकला विचारा",
+  "askRakshakPlaceholder": "तुमच्या प्रकरणाबद्दल किंवा अ‍ॅपबद्दल प्रश्न विचारा",
+  "aiAssistedExplanation": "एआय-सहाय्यित स्पष्टीकरण — पडताळणी आवश्यक",
+
+  "whatHappened": "काय घडले?",
+  "incidentDetails": "घटनेचा तपशील",
+  "complaintReview": "तक्रारीचा आढावा",
+  "evidenceVault": "एव्हिडन्स व्हॉल्ट",
+
+  "statusDraft": "मसुदा",
+  "statusSubmitted": "सबमिट केले",
+  "statusForwarded": "प्राधिकरणाकडे पाठवले",
+  "statusUnderReview": "आढावा घेत आहे",
+  "statusAdditionalInfoRequired": "अतिरिक्त माहिती आवश्यक",
+  "statusUnderInvestigation": "तपास सुरू आहे",
+  "statusResolved": "निराकरण झाले",
+  "statusClosed": "बंद",
+
+  "demoDisclaimerShort": "हे एक डेमो आहे. कोणताही डेटा खऱ्या सरकारी प्रणालीला पाठवला जात नाही.",
+
+  "emptyStateNoData": "इथे अजून काही नाही",
+  "errorGenericTitle": "काहीतरी चुकले",
+  "errorGenericRetry": "कृपया पुन्हा प्रयत्न करा",
+
+  "signIn": "साइन इन करा",
+  "settings": "सेटिंग्ज",
+  "notifications": "सूचना"
+}

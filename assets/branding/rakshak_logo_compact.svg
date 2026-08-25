@@ -1,0 +1,6 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- Simplified mark for very small sizes (favicons, dense toolbars). -->
+  <rect width="128" height="128" rx="28" fill="#0B2545"/>
+  <path d="M64 18 L96 30 L96 63 C96 88 82 103 64 112 C46 103 32 88 32 63 L32 30 Z" fill="#FCFCFB"/>
+  <path d="M50 66 L61 78 L80 52" fill="none" stroke="#0B2545" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

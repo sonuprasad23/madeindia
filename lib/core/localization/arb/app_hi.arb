@@ -1,0 +1,92 @@
+{
+  "@@locale": "hi",
+
+  "appName": "Rakshak",
+  "appTagline": "साइबर सुरक्षा और साइबर अपराध सहायता",
+
+  "navHome": "होम",
+  "navProtect": "सुरक्षा",
+  "navReport": "रिपोर्ट करें",
+  "navCases": "मामले",
+  "navProfile": "प्रोफ़ाइल",
+
+  "goodMorning": "सुप्रभात",
+  "goodAfternoon": "शुभ दोपहर",
+  "goodEvening": "शुभ संध्या",
+  "yourDashboardSubtitle": "आपका साइबर सुरक्षा डैशबोर्ड",
+
+  "cyberSafety": "साइबर सुरक्षा",
+  "protectionActive": "सुरक्षा सक्रिय है",
+  "linkProtection": "लिंक सुरक्षा",
+  "safeLinkViewer": "सेफ लिंक व्यूअर",
+  "on": "चालू",
+  "off": "बंद",
+
+  "actionCheckLink": "लिंक जाँचें",
+  "actionScanQr": "QR स्कैन करें",
+  "actionReportIncident": "घटना दर्ज करें",
+  "actionSaveEvidence": "सबूत सहेजें",
+
+  "myCases": "मेरे मामले",
+  "recentActivity": "हाल की गतिविधि",
+
+  "riskSafeLabel": "कोई ज्ञात खतरा नहीं मिला",
+  "riskSuspiciousLabel": "संदिग्ध लिंक",
+  "riskDangerousLabel": "खतरनाक लिंक",
+  "riskUnknownLabel": "निर्धारित नहीं किया जा सका",
+
+  "viewSafely": "सुरक्षित रूप से देखें",
+  "openAnyway": "फिर भी खोलें",
+  "dontOpen": "न खोलें",
+  "goBack": "वापस जाएं",
+  "openInBrowser": "Chrome में खोलें",
+  "retry": "पुनः प्रयास करें",
+  "cancel": "रद्द करें",
+  "confirm": "पुष्टि करें",
+  "submit": "जमा करें",
+  "continueLabel": "जारी रखें",
+  "continueWithoutThisInformation": "इस जानकारी के बिना जारी रखें",
+  "save": "सहेजें",
+  "edit": "संपादित करें",
+  "delete": "हटाएं",
+  "addEvidence": "सबूत जोड़ें",
+  "next": "आगे",
+  "back": "पीछे",
+
+  "whyWasThisFlagged": "इसे संदिग्ध क्यों माना गया?",
+  "demoThreatIntelligence": "डेमो थ्रेट इंटेलिजेंस",
+
+  "appearance": "दिखावट",
+  "themeLight": "लाइट",
+  "themeDark": "डार्क",
+  "themeSystem": "सिस्टम",
+  "language": "भाषा",
+
+  "askRakshak": "रक्षक से पूछें",
+  "askRakshakPlaceholder": "अपने मामले या ऐप के बारे में प्रश्न पूछें",
+  "aiAssistedExplanation": "एआई-सहायित स्पष्टीकरण — जांच आवश्यक",
+
+  "whatHappened": "क्या हुआ?",
+  "incidentDetails": "घटना विवरण",
+  "complaintReview": "शिकायत की समीक्षा",
+  "evidenceVault": "एविडेंस वॉल्ट",
+
+  "statusDraft": "ड्राफ्ट",
+  "statusSubmitted": "जमा किया गया",
+  "statusForwarded": "प्राधिकरण को अग्रेषित",
+  "statusUnderReview": "समीक्षा में",
+  "statusAdditionalInfoRequired": "अतिरिक्त जानकारी आवश्यक",
+  "statusUnderInvestigation": "जांच जारी है",
+  "statusResolved": "समाधान हो गया",
+  "statusClosed": "बंद",
+
+  "demoDisclaimerShort": "यह एक डेमो है। कोई भी डेटा वास्तविक सरकारी प्रणाली को नहीं भेजा जाता।",
+
+  "emptyStateNoData": "यहाँ अभी कुछ नहीं है",
+  "errorGenericTitle": "कुछ गड़बड़ हो गई",
+  "errorGenericRetry": "कृपया पुनः प्रयास करें",
+
+  "signIn": "साइन इन करें",
+  "settings": "सेटिंग्स",
+  "notifications": "सूचनाएं"
+}

@@ -1,0 +1,8 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Single-color line mark for watermarks / one-ink contexts. -->
+  <path d="M256 66 L380 114 L380 250 C380 344 328 406 256 444 C184 406 132 344 132 250 L132 114 Z"
+        fill="none" stroke="#0B2545" stroke-width="14"/>
+  <line x1="225" y1="182" x2="225" y2="354" stroke="#0B2545" stroke-width="20" stroke-linecap="round"/>
+  <path d="M225 190 h40 a35 35 0 0 1 0 70 h-40" fill="none" stroke="#0B2545" stroke-width="20" stroke-linecap="round"/>
+  <line x1="250" y1="255" x2="300" y2="352" stroke="#0B2545" stroke-width="20" stroke-linecap="round"/>
+</svg>

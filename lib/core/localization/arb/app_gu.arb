@@ -1,0 +1,92 @@
+{
+  "@@locale": "gu",
+
+  "appName": "Rakshak",
+  "appTagline": "સાયબર સલામતી અને સાયબર ક્રાઇમ સહાય",
+
+  "navHome": "હોમ",
+  "navProtect": "સુરક્ષા",
+  "navReport": "રિપોર્ટ કરો",
+  "navCases": "કેસો",
+  "navProfile": "પ્રોફાઇલ",
+
+  "goodMorning": "સુપ્રભાત",
+  "goodAfternoon": "શુભ બપોર",
+  "goodEvening": "શુભ સાંજ",
+  "yourDashboardSubtitle": "તમારું સાયબર સલામતી ડેશબોર્ડ",
+
+  "cyberSafety": "સાયબર સલામતી",
+  "protectionActive": "સુરક્ષા સક્રિય છે",
+  "linkProtection": "લિંક સુરક્ષા",
+  "safeLinkViewer": "સેફ લિંક વ્યુઅર",
+  "on": "ચાલુ",
+  "off": "બંધ",
+
+  "actionCheckLink": "લિંક ચકાસો",
+  "actionScanQr": "QR સ્કેન કરો",
+  "actionReportIncident": "ઘટના નોંધાવો",
+  "actionSaveEvidence": "પુરાવો સાચવો",
+
+  "myCases": "મારા કેસો",
+  "recentActivity": "તાજેતરની પ્રવૃત્તિ",
+
+  "riskSafeLabel": "કોઈ જાણીતું જોખમ મળ્યું નથી",
+  "riskSuspiciousLabel": "શંકાસ્પદ લિંક",
+  "riskDangerousLabel": "ખતરનાક લિંક",
+  "riskUnknownLabel": "નક્કી કરી શકાયું નથી",
+
+  "viewSafely": "સુરક્ષિત રીતે જુઓ",
+  "openAnyway": "તેમ છતાં ખોલો",
+  "dontOpen": "ખોલશો નહીં",
+  "goBack": "પાછા જાઓ",
+  "openInBrowser": "Chrome માં ખોલો",
+  "retry": "ફરી પ્રયાસ કરો",
+  "cancel": "રદ કરો",
+  "confirm": "પુષ્ટિ કરો",
+  "submit": "સબમિટ કરો",
+  "continueLabel": "ચાલુ રાખો",
+  "continueWithoutThisInformation": "આ માહિતી વિના ચાલુ રાખો",
+  "save": "સાચવો",
+  "edit": "સંપાદિત કરો",
+  "delete": "કાઢી નાખો",
+  "addEvidence": "પુરાવો ઉમેરો",
+  "next": "આગળ",
+  "back": "પાછળ",
+
+  "whyWasThisFlagged": "આને શંકાસ્પદ કેમ ગણવામાં આવ્યું?",
+  "demoThreatIntelligence": "ડેમો થ્રેટ ઇન્ટેલિજન્સ",
+
+  "appearance": "દેખાવ",
+  "themeLight": "લાઇટ",
+  "themeDark": "ડાર્ક",
+  "themeSystem": "સિસ્ટમ",
+  "language": "ભાષા",
+
+  "askRakshak": "રક્ષકને પૂછો",
+  "askRakshakPlaceholder": "તમારા કેસ અથવા એપ વિશે પ્રશ્ન પૂછો",
+  "aiAssistedExplanation": "AI-સહાયિત સમજૂતી — ચકાસણી જરૂરી",
+
+  "whatHappened": "શું થયું?",
+  "incidentDetails": "ઘટનાની વિગતો",
+  "complaintReview": "ફરિયાદની સમીક્ષા",
+  "evidenceVault": "એવિડન્સ વૉલ્ટ",
+
+  "statusDraft": "ડ્રાફ્ટ",
+  "statusSubmitted": "સબમિટ થયું",
+  "statusForwarded": "અધિકારીને મોકલાયું",
+  "statusUnderReview": "સમીક્ષા હેઠળ",
+  "statusAdditionalInfoRequired": "વધારાની માહિતી જરૂરી",
+  "statusUnderInvestigation": "તપાસ ચાલુ છે",
+  "statusResolved": "ઉકેલાયું",
+  "statusClosed": "બંધ",
+
+  "demoDisclaimerShort": "આ એક ડેમો છે. કોઈ ડેટા વાસ્તવિક સરકારી સિસ્ટમને મોકલવામાં આવતો નથી.",
+
+  "emptyStateNoData": "અહીં હજુ સુધી કંઈ નથી",
+  "errorGenericTitle": "કંઈક ખોટું થયું",
+  "errorGenericRetry": "કૃપા કરી ફરી પ્રયાસ કરો",
+
+  "signIn": "સાઇન ઇન કરો",
+  "settings": "સેટિંગ્સ",
+  "notifications": "સૂચનાઓ"
+}
