@@ -39,10 +39,16 @@ dependencies:
     sdk: flutter
   go_router: ^17.5.0
   shared_preferences: ^2.5.5
-  flutter_secure_storage: ^11.0.0
+  # Pinned below v10 deliberately: v11 requires compileSdk 37, which has
+  # hit Android SDK Platform-naming resolution failures on some CI images
+  # (sdkmanager installs "android-37.0" but Gradle looks for "android-37").
+  # 9.2.4 only needs compileSdk 34 and exposes the same read/write/delete
+  # API, so this avoids the problem entirely rather than chasing the CI
+  # machine's SDK manager.
+  flutter_secure_storage: 9.2.4
   path_provider: ^2.1.6
   crypto: ^3.0.7
-  file_picker: ^12.1.0
+  file_picker: ^11.0.3
   image_picker: ^1.2.3
   mobile_scanner: ^7.4.0
   webview_flutter: ^4.14.1

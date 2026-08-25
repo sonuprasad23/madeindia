@@ -32,8 +32,8 @@ class IdentityDocumentsScreen extends ConsumerWidget {
     );
     if (type == null) return;
 
-    final result = await FilePicker.pickFile(type: FileType.image);
-    final path = result?.path;
+    final result = await FilePicker.pickFiles(type: FileType.image);
+    final path = (result == null || result.files.isEmpty) ? null : result.files.first.path;
     if (path == null) return;
 
     final profile = ref.read(citizenProfileProvider);

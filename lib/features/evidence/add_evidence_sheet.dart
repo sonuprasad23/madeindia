@@ -74,8 +74,8 @@ class _AddEvidenceSheetContentState extends State<_AddEvidenceSheetContent> {
   Future<void> _pickFile() async {
     setState(() => _busy = true);
     try {
-      final result = await FilePicker.pickFile(type: FileType.any);
-      final path = result?.path;
+      final result = await FilePicker.pickFiles(type: FileType.any);
+      final path = (result == null || result.files.isEmpty) ? null : result.files.first.path;
       if (path == null) return;
       final ext = path.split('.').last.toLowerCase();
       final type = switch (ext) {
