@@ -1,13 +1,36 @@
 import 'package:flutter/services.dart';
 
+/// Outcome of [SystemActionsService.requestBrowserRole].
+enum BrowserRoleOutcome {
+  /// The user accepted the system prompt — Rakshak is now the default
+  /// browser and every generic http/https link will route to it.
+  granted,
+
+  /// The user declined the system prompt.
+  declined,
+
+  /// Rakshak already held the role before asking.
+  alreadyDefault,
+
+  /// The role request isn't available on this device/Android version
+  /// (below Android 10, or the OEM doesn't expose it) — the native side
+  /// falls back to opening the "Open by default" Settings screen instead.
+  unavailable,
+
+  /// The platform channel itself wasn't reachable (non-Android platform).
+  unsupportedPlatform,
+}
+
 /// Dart side of the native Android system-actions bridge in
 /// `MainActivity.kt`: launching a URL in some OTHER app (never Rakshak
-/// itself — see [openExternalBrowser]) and deep-linking into the Android
-/// Settings screen where a user can set Rakshak as their preferred link
-/// handler.
+/// itself — see [openExternalBrowser]), requesting Android's "Default
+/// Browser" role (the mechanism that actually makes every tapped link
+/// route to Rakshak — see [requestBrowserRole]), and a settings-screen
+/// fallback for devices where that role isn't available.
 ///
-/// No-op (returns false) on platforms other than Android — callers should
-/// fall back to a cross-platform mechanism (see `BrowserLauncher`).
+/// No-op (returns a "not supported" outcome) on platforms other than
+/// Android — callers should fall back to a cross-platform mechanism (see
+/// `BrowserLauncher`).
 class SystemActionsService {
   const SystemActionsService([MethodChannel? channel])
     : _channel = channel ?? const MethodChannel('app.rakshak/system');
@@ -32,9 +55,32 @@ class SystemActionsService {
     }
   }
 
+  /// Requests Android's "Default Browser" role directly via a system
+  /// dialog — this is the mechanism that actually makes every tapped
+  /// http/https link route to Rakshak, and does NOT require owning a
+  /// domain (unlike Android's separate, unrelated "App Links" / "Open
+  /// supported links" screen, which only ever applies to domains an app
+  /// has verified ownership of).
+  Future<BrowserRoleOutcome> requestBrowserRole() async {
+    try {
+      final result = await _channel.invokeMethod<String>('requestBrowserRole');
+      return switch (result) {
+        'granted' => BrowserRoleOutcome.granted,
+        'declined' => BrowserRoleOutcome.declined,
+        'already_default' => BrowserRoleOutcome.alreadyDefault,
+        _ => BrowserRoleOutcome.unavailable,
+      };
+    } on MissingPluginException {
+      return BrowserRoleOutcome.unsupportedPlatform;
+    } on PlatformException {
+      return BrowserRoleOutcome.unsupportedPlatform;
+    }
+  }
+
   /// Opens the Android Settings screen for managing which app opens links
   /// by default (API 31+), falling back to the app-info screen on older
-  /// versions. Returns false on non-Android platforms.
+  /// versions. Returns false on non-Android platforms. Kept as a manual
+  /// escape hatch — [requestBrowserRole] is the primary, recommended path.
   Future<bool> openLinkHandlerSettings() async {
     try {
       final result = await _channel.invokeMethod<bool>(

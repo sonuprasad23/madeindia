@@ -55,18 +55,44 @@ class SettingsScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: Spacing.sm),
                 Text(
-                  'Rakshak can check web links before they are opened. Android may '
-                  'require you to select Rakshak as your preferred link handler — '
-                  'this depends on your device and cannot be forced automatically.',
+                  'Rakshak can check web links before they are opened. To have every '
+                  'tapped link route to Rakshak, set it as your device\'s default '
+                  'browser below — Android\'s separate "Open supported links" screen '
+                  'only applies to domains an app has verified ownership of (like a '
+                  'company\'s own site), which doesn\'t apply here.',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSecondaryContainer,
                   ),
                 ),
                 const SizedBox(height: Spacing.md),
                 RakshakButton(
-                  label: 'Open Android Settings',
-                  icon: Icons.settings_outlined,
-                  variant: RakshakButtonVariant.secondary,
+                  label: 'Set Rakshak as Default Browser',
+                  icon: Icons.shield_outlined,
+                  expand: false,
+                  onPressed: () async {
+                    final outcome = await _systemActions.requestBrowserRole();
+                    if (!context.mounted) return;
+                    final message = switch (outcome) {
+                      BrowserRoleOutcome.granted =>
+                        'Rakshak is now your default browser — links tapped elsewhere will open here.',
+                      BrowserRoleOutcome.alreadyDefault =>
+                        'Rakshak is already your default browser.',
+                      BrowserRoleOutcome.declined =>
+                        'Not set — you can try again anytime.',
+                      BrowserRoleOutcome.unavailable =>
+                        'Opened Android Settings — look for "Browser app" under Default apps.',
+                      BrowserRoleOutcome.unsupportedPlatform =>
+                        'Not supported on this device.',
+                    };
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(message)));
+                  },
+                ),
+                const SizedBox(height: Spacing.xs),
+                RakshakButton(
+                  label: 'Open Android Settings manually',
+                  variant: RakshakButtonVariant.text,
                   expand: false,
                   onPressed: () async {
                     final opened = await _systemActions

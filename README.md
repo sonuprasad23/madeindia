@@ -348,20 +348,32 @@ Implementation (`android/app/src/main/kotlin/.../MainActivity.kt` +
   `Intent.EXTRA_EXCLUDE_COMPONENTS` set to Rakshak's own component, so
   Rakshak can never reappear as a choice and re-trigger the gateway.
 
-**Real Android limitation, stated plainly**: Android controls default-app
-selection. Without a verified App Link (which requires a real domain),
-Rakshak cannot force itself to silently receive every http/https link —
-the user must either pick "Rakshak" from the disambiguation chooser each
-time, or explicitly set it as the preferred handler via
-**Settings → Apps → Rakshak → Open by default**. `Settings → Link
-Protection → Enable Link Protection → Open Android Settings` explains
-this and deep-links straight into that screen
-(`SystemActionsService.openLinkHandlerSettings`, using
-`Settings.ACTION_APP_OPEN_BY_DEFAULT_SETTINGS` on Android 12+ with a
-fallback to the app-info screen on older versions). Rakshak does **not**
-use Accessibility Services and does **not** monitor other apps, clipboard,
-or browsing history — only Android's standard intent/default-handler
-mechanism.
+**Real Android limitation, stated plainly** — and two easily-confused
+mechanisms:
+
+- **App Links** (`Settings → Apps → Rakshak → Open by default → "Open
+  supported links"`) only ever lists domains an app has *cryptographically
+  verified ownership of*, via an `assetlinks.json` file hosted on that
+  real domain (requires `android:autoVerify="true"` + Digital Asset
+  Links). Rakshak doesn't own whatsapp.com/gmail.com/etc., so this screen
+  is always empty for it, and toggling it does nothing — that's Android's
+  security model working as intended, not a bug in this app.
+- **The "Default Browser" role** (`RoleManager.ROLE_BROWSER`) is the
+  mechanism that actually routes every generic http/https link to an app,
+  and does **not** require owning any domain — only a plain, unrestricted
+  "can open any web link" intent filter, which Rakshak's manifest already
+  declares. `Settings → Link Protection → Set Rakshak as Default Browser`
+  requests this role directly via a one-tap system dialog
+  (`SystemActionsService.requestBrowserRole` →
+  `RoleManager.createRequestRoleIntent`, API 29+), with a manual "Open
+  Android Settings" fallback (`Settings → Apps → Default apps → Browser
+  app`) for older versions or devices where the role isn't exposed.
+
+Even as the default browser, Android still lets the user override this at
+any time from the same Settings screen — Rakshak cannot make this
+permanent or hide the setting. Rakshak does **not** use Accessibility
+Services and does **not** monitor other apps, clipboard, or browsing
+history — only Android's standard intent/role/default-handler mechanisms.
 
 ## Safe Viewer architecture
 

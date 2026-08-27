@@ -1,9 +1,12 @@
 package com.rakshak.app.rakshak
 
+import android.app.Activity
+import android.app.role.RoleManager
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.provider.Settings
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -23,21 +26,39 @@ import io.flutter.plugin.common.MethodChannel
  *    OTHER app while deliberately excluding Rakshak itself from the
  *    chooser (so choosing "Open Directly"/"Open in Default Browser"
  *    never routes back into Rakshak and re-shows the gateway — the
- *    "intent loop" this feature must avoid), and deep-linking into the
- *    Android Settings screen where a user can set Rakshak as their
- *    preferred link handler.
+ *    "intent loop" this feature must avoid); requesting Android's
+ *    "Default Browser" role directly (the mechanism that actually makes
+ *    every tapped link route to Rakshak — see [requestBrowserRole]); and
+ *    a fallback deep-link into Android Settings for devices/versions
+ *    where that role request isn't available.
+ *
+ * IMPORTANT — there are two, easily-confused Android mechanisms here:
+ *   - "App Links" (Settings > Apps > Rakshak > Open by default > "Open
+ *     supported links") only ever lists domains an app has *cryptographically
+ *     verified ownership of* via a `assetlinks.json` file hosted on that real
+ *     domain. Rakshak doesn't own whatsapp.com/gmail.com/etc., so this
+ *     screen will always be empty for it — that's Android's security model
+ *     working as intended, not a bug.
+ *   - The **Default Browser role** (`RoleManager.ROLE_BROWSER`) is what
+ *     actually routes every generic http/https link to an app, and does
+ *     NOT require owning any domain — only that the app declares a plain
+ *     "can open any web link" intent filter, which Rakshak's manifest
+ *     already does. [requestBrowserRole] is the correct, working
+ *     mechanism for "make Rakshak open every link".
  *
  * Deliberately hand-rolled with MethodChannel/EventChannel instead of a
  * third-party plugin: this is the entire integration surface Rakshak
- * needs from native Android for these two features.
+ * needs from native Android for these features.
  */
 class MainActivity : FlutterActivity() {
     private val incomingLinkMethodChannel = "app.rakshak/share_intent"
     private val incomingLinkEventChannel = "app.rakshak/share_intent_stream"
     private val systemActionsChannel = "app.rakshak/system"
+    private val requestBrowserRoleCode = 5001
 
     private var pendingIncomingLink: Map<String, Any?>? = null
     private var incomingLinkSink: EventChannel.EventSink? = null
+    private var pendingBrowserRoleResult: MethodChannel.Result? = null
 
     /** Friendly display names for well-known apps, resolved best-effort
      * from [Activity.getReferrer]. Android does not guarantee a referrer
@@ -97,6 +118,15 @@ class MainActivity : FlutterActivity() {
         return knownAppLabels[referrerPackage]
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == requestBrowserRoleCode) {
+            val granted = resultCode == Activity.RESULT_OK
+            pendingBrowserRoleResult?.success(if (granted) "granted" else "declined")
+            pendingBrowserRoleResult = null
+        }
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
@@ -135,6 +165,7 @@ class MainActivity : FlutterActivity() {
                 "openLinkHandlerSettings" -> {
                     result.success(openLinkHandlerSettings())
                 }
+                "requestBrowserRole" -> requestBrowserRole(result)
                 else -> result.notImplemented()
             }
         }
@@ -210,6 +241,49 @@ class MainActivity : FlutterActivity() {
             true
         } catch (_: Exception) {
             false
+        }
+    }
+
+    /**
+     * The mechanism that actually makes every tapped http/https link route
+     * to Rakshak, with no domain ownership required: requests Android's
+     * "Default Browser" role via [RoleManager] (API 29+), which shows the
+     * user a direct system dialog ("Set Rakshak as your Browser app?").
+     * Rakshak qualifies because its manifest declares a plain, unrestricted
+     * "can open any web link" `ACTION_VIEW`/`BROWSABLE` intent filter — the
+     * same requirement any real browser meets.
+     *
+     * Resolves to one of: "granted", "declined", "already_default",
+     * "unavailable" (API < 29, or the device/OEM doesn't expose the role —
+     * falls back to the "Open by default" Settings screen instead).
+     */
+    private fun requestBrowserRole(result: MethodChannel.Result) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            openLinkHandlerSettings()
+            result.success("unavailable")
+            return
+        }
+
+        val roleManager = getSystemService(RoleManager::class.java)
+        if (roleManager == null || !roleManager.isRoleAvailable(RoleManager.ROLE_BROWSER)) {
+            openLinkHandlerSettings()
+            result.success("unavailable")
+            return
+        }
+
+        if (roleManager.isRoleHeld(RoleManager.ROLE_BROWSER)) {
+            result.success("already_default")
+            return
+        }
+
+        pendingBrowserRoleResult = result
+        val intent = roleManager.createRequestRoleIntent(RoleManager.ROLE_BROWSER)
+        try {
+            startActivityForResult(intent, requestBrowserRoleCode)
+        } catch (_: Exception) {
+            pendingBrowserRoleResult = null
+            openLinkHandlerSettings()
+            result.success("unavailable")
         }
     }
 }
