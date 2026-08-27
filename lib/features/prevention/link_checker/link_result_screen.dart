@@ -1,6 +1,6 @@
-import 'package:crypto/crypto.dart';
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -17,15 +17,55 @@ import '../../../data/models/link_check_result.dart';
 import '../../../data/models/notification_item.dart';
 import '../../../data/models/risk_level.dart';
 import '../../../data/repositories/evidence_repository.dart';
+import '../../../data/repositories/link_repository.dart';
 import '../../../data/repositories/notification_repository.dart';
+import '../protection_settings_controller.dart';
 
-class LinkResultScreen extends ConsumerWidget {
+class LinkResultScreen extends ConsumerStatefulWidget {
   const LinkResultScreen({super.key, required this.result});
 
   final LinkCheckResult result;
 
+  @override
+  ConsumerState<LinkResultScreen> createState() => _LinkResultScreenState();
+}
+
+class _LinkResultScreenState extends ConsumerState<LinkResultScreen> {
+  bool _autoOpenAttempted = false;
+
+  LinkCheckResult get result => widget.result;
+
+  @override
+  void initState() {
+    super.initState();
+    final settings = ref.read(protectionSettingsProvider);
+    if (result.riskLevel == RiskLevel.safe &&
+        settings.openSafeLinksAutomatically) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _autoOpenIfSafe());
+    }
+  }
+
+  Future<void> _autoOpenIfSafe() async {
+    if (_autoOpenAttempted || !mounted) return;
+    _autoOpenAttempted = true;
+    await _openExternally(context);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Opened automatically — marked safe and "Open safe links automatically" is on.',
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _recordAction(LinkUserAction action) =>
+      ref.read(linkRepositoryProvider.notifier).recordAction(result.id, action);
+
   Future<void> _openExternally(BuildContext context) async {
     final ok = await BrowserLauncher.openExternally(result.normalizedUrl);
+    await _recordAction(LinkUserAction.openedInBrowser);
     if (!ok && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -66,10 +106,13 @@ class LinkResultScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final brightness = theme.brightness;
     final color = result.riskLevel.color(brightness);
+    final showExplanations = ref
+        .watch(protectionSettingsProvider)
+        .showRiskExplanations;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Link Check Result')),
@@ -77,6 +120,16 @@ class LinkResultScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(Spacing.lg),
         children: [
           Center(child: RakshakRiskBadge(level: result.riskLevel)),
+          const SizedBox(height: Spacing.sm),
+          Center(
+            child: Text(
+              result.riskLevel.description,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
           const SizedBox(height: Spacing.xl),
           _detailRow(context, 'Domain', result.domain),
           _detailRow(
@@ -86,36 +139,40 @@ class LinkResultScreen extends ConsumerWidget {
           ),
           _detailRow(context, 'Risk score', '${result.riskScore} / 100'),
           _detailRow(context, 'Checked', 'Just now'),
+          if (result.sourceApp != null)
+            _detailRow(context, 'Received from', result.sourceApp!),
           const SizedBox(height: Spacing.xl),
 
-          if (result.negativeIndicators.isNotEmpty) ...[
-            Text(
-              'Why was this flagged?',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
+          if (showExplanations) ...[
+            if (result.negativeIndicators.isNotEmpty) ...[
+              Text(
+                'Why was this flagged?',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            ),
-            const SizedBox(height: Spacing.sm),
-            ...result.negativeIndicators.map(
-              (i) => _IndicatorRow(indicator: i, color: color),
-            ),
-            const SizedBox(height: Spacing.lg),
-          ],
-          if (result.positiveIndicators.isNotEmpty) ...[
-            Text(
-              'Reassuring signals',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
+              const SizedBox(height: Spacing.sm),
+              ...result.negativeIndicators.map(
+                (i) => _IndicatorRow(indicator: i, color: color),
               ),
-            ),
-            const SizedBox(height: Spacing.sm),
-            ...result.positiveIndicators.map(
-              (i) => _IndicatorRow(
-                indicator: i,
-                color: theme.colorScheme.tertiary,
+              const SizedBox(height: Spacing.lg),
+            ],
+            if (result.positiveIndicators.isNotEmpty) ...[
+              Text(
+                'Reassuring signals',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            ),
-            const SizedBox(height: Spacing.lg),
+              const SizedBox(height: Spacing.sm),
+              ...result.positiveIndicators.map(
+                (i) => _IndicatorRow(
+                  indicator: i,
+                  color: theme.colorScheme.tertiary,
+                ),
+              ),
+              const SizedBox(height: Spacing.lg),
+            ],
           ],
 
           Container(
@@ -158,13 +215,16 @@ class LinkResultScreen extends ConsumerWidget {
   }
 
   List<Widget> _actionsFor(BuildContext context, WidgetRef ref) {
-    void viewSafely() => context.push(AppRoutes.safeViewer, extra: result);
+    void viewSafely() {
+      _recordAction(LinkUserAction.viewedSafely);
+      context.push(AppRoutes.safeViewer, extra: result);
+    }
 
     switch (result.riskLevel) {
       case RiskLevel.safe:
         return [
           RakshakButton(
-            label: 'Open in Chrome',
+            label: 'Open in Default Browser',
             icon: Icons.open_in_new_rounded,
             onPressed: () => _openExternally(context),
           ),
@@ -194,7 +254,10 @@ class LinkResultScreen extends ConsumerWidget {
           RakshakButton(
             label: "Don't Open",
             variant: RakshakButtonVariant.text,
-            onPressed: () => Navigator.of(context).maybePop(),
+            onPressed: () {
+              _recordAction(LinkUserAction.dontOpen);
+              Navigator.of(context).maybePop();
+            },
           ),
         ];
       case RiskLevel.dangerous:
@@ -208,7 +271,10 @@ class LinkResultScreen extends ConsumerWidget {
           RakshakButton(
             label: 'Go Back',
             variant: RakshakButtonVariant.secondary,
-            onPressed: () => Navigator.of(context).maybePop(),
+            onPressed: () {
+              _recordAction(LinkUserAction.dontOpen);
+              Navigator.of(context).maybePop();
+            },
           ),
         ];
       case RiskLevel.unknown:
@@ -229,27 +295,38 @@ class LinkResultScreen extends ConsumerWidget {
   }
 
   Future<void> _confirmAndOpen(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Open this link?'),
-        content: const Text(
-          'This link has suspicious indicators. Opening it may expose you to a phishing or scam page. Continue at your own risk.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Open Anyway'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true && context.mounted) {
-      await _openExternally(context);
+    final warnFirst = ref
+        .read(protectionSettingsProvider)
+        .warnAboutSuspiciousLinks;
+
+    var confirmed = true;
+    if (warnFirst) {
+      confirmed =
+          await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Open this link?'),
+              content: const Text(
+                'This link has suspicious indicators. Opening it may expose you to a phishing or scam page. Continue at your own risk.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Open Anyway'),
+                ),
+              ],
+            ),
+          ) ==
+          true;
+    }
+
+    if (confirmed && context.mounted) {
+      await _recordAction(LinkUserAction.openedAnyway);
+      if (context.mounted) await _openExternally(context);
     }
   }
 

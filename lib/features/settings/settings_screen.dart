@@ -3,17 +3,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/localization/language_controller.dart';
+import '../../core/services/system_actions_service.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../core/theme/theme_controller.dart';
+import '../../core/widgets/rakshak_button.dart';
 import '../../core/widgets/rakshak_surfaces.dart';
+import '../location/current_location_controller.dart';
+import '../prevention/protection_settings_controller.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
+
+  static const _systemActions = SystemActionsService();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
     final locale = ref.watch(languageProvider);
+    final protection = ref.watch(protectionSettingsProvider);
+    final location = ref.watch(currentLocationProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -21,6 +29,157 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(Spacing.lg),
         children: [
+          const RakshakSectionHeader(title: 'Link Protection'),
+          RakshakCard(
+            color: theme.colorScheme.secondaryContainer,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.shield_outlined,
+                      color: theme.colorScheme.onSecondaryContainer,
+                    ),
+                    const SizedBox(width: Spacing.sm),
+                    Expanded(
+                      child: Text(
+                        'Enable Link Protection',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: theme.colorScheme.onSecondaryContainer,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: Spacing.sm),
+                Text(
+                  'Rakshak can check web links before they are opened. Android may '
+                  'require you to select Rakshak as your preferred link handler — '
+                  'this depends on your device and cannot be forced automatically.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSecondaryContainer,
+                  ),
+                ),
+                const SizedBox(height: Spacing.md),
+                RakshakButton(
+                  label: 'Open Android Settings',
+                  icon: Icons.settings_outlined,
+                  variant: RakshakButtonVariant.secondary,
+                  expand: false,
+                  onPressed: () async {
+                    final opened = await _systemActions
+                        .openLinkHandlerSettings();
+                    if (!context.mounted) return;
+                    if (!opened) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Could not open Android Settings on this device.',
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: Spacing.md),
+          RakshakCard(
+            child: Column(
+              children: [
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Check links before opening'),
+                  value: protection.linkProtectionEnabled,
+                  onChanged: (v) => ref
+                      .read(protectionSettingsProvider.notifier)
+                      .setLinkProtection(v),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Safe Link Viewer'),
+                  value: protection.safeViewerDefaultOn,
+                  onChanged: (v) => ref
+                      .read(protectionSettingsProvider.notifier)
+                      .setSafeViewerDefault(v),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Warn about suspicious links'),
+                  subtitle: const Text(
+                    'Shows an extra confirmation before "Open Anyway"',
+                  ),
+                  value: protection.warnAboutSuspiciousLinks,
+                  onChanged: (v) => ref
+                      .read(protectionSettingsProvider.notifier)
+                      .setWarnAboutSuspiciousLinks(v),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Open safe links automatically'),
+                  subtitle: const Text(
+                    'Only applies to links marked "No known threats detected"',
+                  ),
+                  value: protection.openSafeLinksAutomatically,
+                  onChanged: (v) => ref
+                      .read(protectionSettingsProvider.notifier)
+                      .setOpenSafeLinksAutomatically(v),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Show risk explanations'),
+                  subtitle: const Text(
+                    '"Why was this flagged?" details on results',
+                  ),
+                  value: protection.showRiskExplanations,
+                  onChanged: (v) => ref
+                      .read(protectionSettingsProvider.notifier)
+                      .setShowRiskExplanations(v),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: Spacing.xl),
+
+          const RakshakSectionHeader(title: 'Location'),
+          RakshakCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  location.info != null
+                      ? 'Current location: ${location.info!.displayLabel}'
+                      : 'No location saved on this device.',
+                  style: theme.textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Rakshak only retrieves your location when you ask it to, and never '
+                  'tracks it continuously in the background.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                if (location.info != null) ...[
+                  const SizedBox(height: Spacing.md),
+                  RakshakButton(
+                    label: 'Clear saved location',
+                    icon: Icons.location_off_outlined,
+                    variant: RakshakButtonVariant.secondary,
+                    expand: false,
+                    onPressed: () => ref
+                        .read(currentLocationProvider.notifier)
+                        .clearSavedLocation(),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: Spacing.xl),
+
           const RakshakSectionHeader(title: 'Appearance'),
           RakshakCard(
             child: RadioGroup<ThemeMode>(

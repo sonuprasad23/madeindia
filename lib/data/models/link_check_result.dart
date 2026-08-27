@@ -1,5 +1,26 @@
 import 'risk_level.dart';
 
+/// What the user ultimately did with a checked link — recorded into Link
+/// History after the fact so the history reads like a real audit trail
+/// ("Checked example.com — Low Risk — Opened in default browser").
+enum LinkUserAction {
+  openedInBrowser,
+  viewedSafely,
+  openedAnyway,
+  dontOpen,
+  cancelled,
+}
+
+extension LinkUserActionX on LinkUserAction {
+  String get label => switch (this) {
+    LinkUserAction.openedInBrowser => 'Opened in default browser',
+    LinkUserAction.viewedSafely => 'Viewed safely',
+    LinkUserAction.openedAnyway => 'Opened anyway',
+    LinkUserAction.dontOpen => "Didn't open",
+    LinkUserAction.cancelled => 'Cancelled',
+  };
+}
+
 /// A single reason contributing to a link's risk classification.
 class ThreatIndicator {
   const ThreatIndicator({
@@ -46,6 +67,8 @@ class LinkCheckResult {
     required this.checkedAt,
     this.finalUrl,
     this.source = 'Demo Threat Intelligence',
+    this.sourceApp,
+    this.userAction,
   });
 
   final String id;
@@ -65,10 +88,36 @@ class LinkCheckResult {
   final String? finalUrl;
   final String source;
 
+  /// Best-effort friendly name of the app this link arrived from (e.g.
+  /// "WhatsApp"), when it reached Rakshak via an Android share/view
+  /// intent. Null for links checked by typing/pasting or via QR.
+  final String? sourceApp;
+
+  /// What the user ultimately did with this result. Set after the fact
+  /// (the result exists before the user acts), so this starts null and is
+  /// filled in via [LinkRepository.recordAction].
+  final LinkUserAction? userAction;
+
   List<ThreatIndicator> get negativeIndicators =>
       indicators.where((i) => !i.isPositive).toList();
   List<ThreatIndicator> get positiveIndicators =>
       indicators.where((i) => i.isPositive).toList();
+
+  LinkCheckResult copyWith({LinkUserAction? userAction}) => LinkCheckResult(
+    id: id,
+    originalUrl: originalUrl,
+    normalizedUrl: normalizedUrl,
+    domain: domain,
+    riskLevel: riskLevel,
+    riskScore: riskScore,
+    indicators: indicators,
+    isHttps: isHttps,
+    checkedAt: checkedAt,
+    finalUrl: finalUrl,
+    source: source,
+    sourceApp: sourceApp,
+    userAction: userAction ?? this.userAction,
+  );
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -82,6 +131,8 @@ class LinkCheckResult {
     'finalUrl': finalUrl,
     'source': source,
     'indicators': indicators.map((i) => i.toJson()).toList(),
+    'sourceApp': sourceApp,
+    'userAction': userAction?.name,
   };
 
   factory LinkCheckResult.fromJson(Map<String, dynamic> json) =>
@@ -99,5 +150,9 @@ class LinkCheckResult {
         checkedAt: DateTime.parse(json['checkedAt'] as String),
         finalUrl: json['finalUrl'] as String?,
         source: json['source'] as String? ?? 'Demo Threat Intelligence',
+        sourceApp: json['sourceApp'] as String?,
+        userAction: json['userAction'] == null
+            ? null
+            : LinkUserAction.values.byName(json['userAction'] as String),
       );
 }

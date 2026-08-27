@@ -10,12 +10,27 @@ import '../../../data/repositories/link_repository.dart';
 import 'link_analysis_service.dart';
 import 'link_checker_providers.dart';
 
+/// Launch arguments carrying both the URL and (when known) which app it
+/// arrived from — used when routing here from the Link Security Gateway.
+/// A plain `String` extra is also accepted for the simpler in-app cases
+/// (QR scan results, manual re-checks) that have no source app to report.
+class LinkCheckerLaunchArgs {
+  const LinkCheckerLaunchArgs({required this.url, this.sourceApp});
+
+  final String url;
+  final String? sourceApp;
+}
+
 /// Entry point for URL analysis — accepts a pasted/typed URL, a URL shared
 /// in from another app (via [initialUrl]), or a re-check from history.
 class LinkCheckerScreen extends ConsumerStatefulWidget {
-  const LinkCheckerScreen({super.key, this.initialUrl});
+  const LinkCheckerScreen({super.key, this.initialUrl, this.sourceApp});
 
   final String? initialUrl;
+
+  /// Best-effort friendly name of the app this URL arrived from, when
+  /// known (see [LinkCheckerLaunchArgs]).
+  final String? sourceApp;
 
   @override
   ConsumerState<LinkCheckerScreen> createState() => _LinkCheckerScreenState();
@@ -59,7 +74,7 @@ class _LinkCheckerScreenState extends ConsumerState<LinkCheckerScreen> {
 
     final service = ref.read(linkAnalysisServiceProvider);
     try {
-      final result = await service.checkUrl(input);
+      final result = await service.checkUrl(input, sourceApp: widget.sourceApp);
       await ref.read(linkRepositoryProvider.notifier).record(result);
       if (!mounted) return;
       context.push(AppRoutes.linkCheckerResult, extra: result);

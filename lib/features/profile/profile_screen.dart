@@ -129,6 +129,14 @@ class ProfileScreen extends ConsumerWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
+          const SizedBox(height: Spacing.sm),
+          Text(
+            'Based on your registered address — not your current location, '
+            'and not an official jurisdiction determination.',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
           const SizedBox(height: Spacing.md),
           if (confirmed)
             Row(

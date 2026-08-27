@@ -28,7 +28,10 @@ complaint review, case tracking) and a conservative, rule-based assistant.
 - [Building the APK / App Bundle](#building-the-apk--app-bundle)
 - [Codemagic CI](#codemagic-ci)
 - [Link Checker architecture](#link-checker-architecture)
+- [Threat intelligence limitations](#threat-intelligence-limitations)
+- [Android link interception](#android-link-interception)
 - [Safe Viewer architecture](#safe-viewer-architecture)
+- [Location](#location)
 - [Mock government integration architecture](#mock-government-integration-architecture)
 - [Admin panel](#admin-panel)
 - [Future production integrations](#future-production-integrations)
@@ -75,13 +78,20 @@ specific seams.
 ## Features
 
 **Prevention**
-- Link Checker with a deterministic, explainable risk engine (not random).
-- Share-to-Rakshak from any Android app (Chrome, WhatsApp, etc.) via a
-  small native `MainActivity.kt` bridge — no third-party plugin needed.
+- Link Checker with a deterministic, explainable risk engine (not random),
+  layered as Local Rules → optional Threat Intelligence → Risk Engine.
+- Android link interception: Rakshak can be selected as an http/https
+  handler, so tapping a link in WhatsApp/SMS/Gmail/Telegram/etc. opens the
+  **Link Security Gateway** ("Check this link before opening?") before
+  anything loads — plus Share-to-Rakshak from any app. Both go through one
+  native `MainActivity.kt` bridge — no third-party plugin needed.
 - QR scanner (URL / plain text / UPI payment payloads).
 - Demo Safe Viewer: an in-app WebView with an explicit risk gate, clearly
   labelled as a demo implementation, not full remote browser isolation.
-- Link history, scam-awareness articles (admin-managed content).
+- Link history (URL, domain, risk, reasons, source app, and what the user
+  ultimately did with it), scam-awareness articles (admin-managed content).
+- One-shot current-location card on Home, clearly distinct from the
+  citizen profile's registered address/jurisdiction.
 
 **Reporting & case assistance**
 - Reusable citizen profile (identity, address, jurisdiction suggestion,
@@ -99,7 +109,10 @@ specific seams.
   model with access to invent facts.
 
 **Admin**
-- Dashboard with synthetic + live-blended analytics (`fl_chart`).
+- Dashboard with synthetic + live-blended analytics (`fl_chart`), including
+  a Link Checks breakdown (safe/suspicious/dangerous/unknown counts) and a
+  Location Statistics card (state-level aggregation only — never exact
+  per-user coordinates).
 - User directory, case status management (the app's "mock backend"),
   threat-intelligence domain management, content management, feature
   flags, and link-checker risk thresholds.
@@ -138,8 +151,11 @@ android/           standard Flutter Android project + the share-intent bridge
 
 Copy `.env.example` for reference. Flutter doesn't read `.env` files
 directly — pass the same keys via `--dart-define` at run/build time, or as
-encrypted environment variables in Codemagic. Only one variable currently
-has any effect: the demo admin credentials (see below).
+encrypted environment variables in Codemagic. Two variables currently have
+any effect: the demo admin credentials (see below), and
+`THREAT_INTEL_BACKEND_URL` (empty by default — see [Threat intelligence
+limitations](#threat-intelligence-limitations); leaving it unset keeps the
+"Real Threat Intelligence" flag a no-op even if turned on in Admin).
 
 ## Demo credentials
 
@@ -208,34 +224,144 @@ be added once iOS platform files exist.
 ## Link Checker architecture
 
 ```text
-User input (typed / pasted / shared / QR)
+User input (typed / pasted / shared / view-intent / QR)
         │
         ▼
-UrlUtils.normalize()        — parsing only, no scoring
-        │
+UrlUtils.normalize()             — parsing only, no scoring; the ORIGINAL
+        │                          string is preserved and shown to the
+        │                          user untouched — only a normalized copy
+        │                          is used for analysis
         ▼
-LinkRiskEngine.assess()     — pure, deterministic scoring function
-        │  (known-safe / known-malicious demo lists, IP hosts, punycode,
-        │   suspicious TLDs, brand-impersonation keywords, HTTPS, …)
+LinkRiskEngine.assess()          — "Local Rules": pure, deterministic
+        │                          scoring (known-safe / known-malicious
+        │                          demo lists, IP hosts, punycode,
+        │                          suspicious TLDs, brand-impersonation
+        │                          keywords, HTTPS, …). No randomness —
+        │                          same input always produces the same
+        │                          output.
         ▼
-LinkAnalysisService.checkUrl()  — the swappable seam: returns the exact
-        │                          same LinkCheckResult shape a real
-        │                          threat-intel API would
+ThreatIntelligenceProvider.lookup() — "Threat Intelligence": optional
+        │                          layer, OFF by default (see next
+        │                          section). Can only ADD a corroborating
+        │                          indicator and escalate severity — never
+        │                          silently downgrades a local finding.
         ▼
-LinkCheckResult (risk level, score, explained indicators)
+LinkAnalysisService.checkUrl()   — the swappable seam: returns the exact
+        │                          same LinkCheckResult shape regardless
+        │                          of which layers actually contributed
+        ▼
+LinkCheckResult (risk level, score, explained indicators, recorded to
+Link History together with the source app it arrived from and what the
+user ultimately did with it)
 ```
 
-`LinkRiskEngine` is pure and synchronous by design — the same input always
-produces the same output, which is what makes it unit-testable and lets
-every result show *why* it was flagged ("Why was this flagged?"). Replacing
-the demo lists in `DemoThreatIntel` with a live feed means implementing a
-new `LinkAnalysisService`; nothing else in the app changes. Admin-managed
+Replacing the demo lists in `DemoThreatIntel` with a live feed means
+implementing a new `ThreatIntelligenceProvider` (see next section) or
+`LinkAnalysisService`; nothing else in the app changes. Admin-managed
 domain overrides (`Admin → Threat Intelligence`) are consulted first and
 take priority over the built-in demo lists, which is the same seam a real
 feed would use.
 
 The app never states a link is "100% safe" — only "no known threats
 detected", "suspicious", "dangerous", or "unable to determine".
+
+## Threat intelligence limitations
+
+`Admin → Settings → Real Threat Intelligence` is a real feature flag, but
+it is **OFF by default and has no live backend behind it in this repo** —
+this is a deliberate, documented limitation, not an oversight:
+
+- **URLhaus (abuse.ch)** now requires an `Auth-Key` header on every API
+  call (their 2024 "Community First" rollout) — there is no keyless
+  lookup left to call directly from a mobile client. Their free tier is
+  fair-use/non-commercial in spirit; abuse.ch directs commercial/for-profit
+  use to their paid API instead. (https://urlhaus-api.abuse.ch/,
+  https://abuse.ch/blog/community-first/)
+- **VirusTotal Public API v3** requires a per-account API key, caps free
+  usage at **500 requests/day and 4/minute**, and its Terms of Service
+  **explicitly prohibit commercial use** of the Public API tier — it "must
+  not be used in commercial products or services."
+  (https://docs.virustotal.com/reference/public-vs-premium-api)
+- Both require a secret that **must never be embedded in a mobile app** —
+  a decompiled APK trivially leaks any key baked into it, which is exactly
+  what the task's own constraint forbids.
+
+So the architecture is: `BackendProxyThreatIntelligenceProvider`
+(`lib/features/prevention/link_checker/backend_proxy_threat_intelligence_provider.dart`)
+is real, working HTTP-client code, but it talks to **your own backend
+proxy** (which would hold the URLhaus/VirusTotal key server-side), not to
+those APIs directly:
+
+```text
+Flutter (DemoLinkAnalysisService)
+   │  GET {THREAT_INTEL_BACKEND_URL}/v1/link-check?url=...
+   ▼
+Your backend proxy   — holds the URLhaus Auth-Key / VirusTotal API key,
+   │                    never shipped in the app
+   ▼
+URLhaus / VirusTotal / etc.
+```
+
+With `THREAT_INTEL_BACKEND_URL` unset (the default), this provider is
+never even constructed —
+`threatIntelligenceProviderProvider` falls back to
+`DisabledThreatIntelligenceProvider`, a no-op. Set the flag AND the
+`--dart-define=THREAT_INTEL_BACKEND_URL=...` build variable once a real
+proxy exists; nothing else in the app needs to change. Never present any
+of this as a "definitive safe verdict" — see the risk-level copy rules
+above.
+
+## Android link interception
+
+Rakshak can be selected as an Android http/https link handler, so tapping
+a link in WhatsApp/SMS/Gmail/Telegram/etc. can route it through Rakshak's
+**Link Security Gateway** before anything opens:
+
+```text
+Other app → user taps a link → Android ACTION_VIEW intent
+   → Rakshak (MainActivity.kt) → LinkGatewayScreen
+        "Check this link before opening?"
+        [ Check Link ]  [ Open Directly ]  [ Cancel ]
+```
+
+Implementation (`android/app/src/main/kotlin/.../MainActivity.kt` +
+`lib/core/services/incoming_link_service.dart`):
+
+- A manifest `<intent-filter>` for `ACTION_VIEW` + `BROWSABLE` on
+  `http`/`https` registers Rakshak as an available handler. It is
+  deliberately **not** `android:autoVerify="true"` — that requires
+  publishing a Digital Asset Links (`assetlinks.json`) file on a real
+  verified domain, which this demo doesn't have.
+- Both `ACTION_VIEW` (tapped link) and `ACTION_SEND` (shared text/URL) are
+  captured — cold start (`onCreate`), already-running/backgrounded
+  (`onNewIntent`), and repeated intents during the app's lifetime are all
+  handled, surfaced to Flutter as the same `IncomingLinkEvent` shape over
+  one `MethodChannel`/`EventChannel` pair.
+- The original URL string is never altered before being shown to the
+  user; only a normalized copy is used for analysis (see
+  `UrlUtils.normalize`).
+- **Anti-loop guarantee**: choosing "Open Directly" (or "Open in Default
+  Browser" from a result screen) calls the native
+  `openExternalBrowser` method, which resolves the device's actual
+  default handler and launches it explicitly — and if no single default
+  exists, builds the chooser itself with
+  `Intent.EXTRA_EXCLUDE_COMPONENTS` set to Rakshak's own component, so
+  Rakshak can never reappear as a choice and re-trigger the gateway.
+
+**Real Android limitation, stated plainly**: Android controls default-app
+selection. Without a verified App Link (which requires a real domain),
+Rakshak cannot force itself to silently receive every http/https link —
+the user must either pick "Rakshak" from the disambiguation chooser each
+time, or explicitly set it as the preferred handler via
+**Settings → Apps → Rakshak → Open by default**. `Settings → Link
+Protection → Enable Link Protection → Open Android Settings` explains
+this and deep-links straight into that screen
+(`SystemActionsService.openLinkHandlerSettings`, using
+`Settings.ACTION_APP_OPEN_BY_DEFAULT_SETTINGS` on Android 12+ with a
+fallback to the app-info screen on older versions). Rakshak does **not**
+use Accessibility Services and does **not** monitor other apps, clipboard,
+or browsing history — only Android's standard intent/default-handler
+mechanism.
 
 ## Safe Viewer architecture
 
@@ -250,6 +376,33 @@ The screen is structured so that a future version could swap the WebView
 for a call into a real remote-isolation backend (loading a video/DOM
 stream of a disposable remote session instead) without changing how the
 rest of the app navigates to or interacts with this screen.
+
+## Location
+
+The Home dashboard's Location Card (`lib/features/location/`) shows the
+device's **current, one-shot** location — deliberately never the same
+thing as the citizen profile's registered address or suggested
+jurisdiction (see `Profile`, which now says so explicitly).
+
+- Never requested on first launch — the card starts as an explanation +
+  "Allow Location" / "Not Now", and only calls into `geolocator` when the
+  user taps "Allow Location".
+- One-shot retrieval only (`Geolocator.getCurrentPosition`) — no
+  background/continuous tracking, no location listener left running.
+- Reverse-geocoded via the `geocoding` package into city/state/pincode
+  where available; if geocoding fails, the coordinates alone are still
+  shown rather than fabricating a place name.
+- Denied vs. permanently-denied are handled differently: a plain denial
+  can be retried in-app; a permanent denial (or location services being
+  off) routes to the relevant Android Settings screen instead of
+  re-prompting (`Geolocator.openAppSettings` /
+  `Geolocator.openLocationSettings`) — Rakshak never nags after a
+  permanent denial.
+- The last retrieved location is cached locally (`SharedPreferences`) so
+  it survives an app restart; `Settings → Location → Clear saved location`
+  deletes it. It is never uploaded anywhere — the Admin "Location
+  Statistics" card only ever aggregates by **state**, never exact
+  coordinates, and is otherwise synthetic demo data.
 
 ## Mock government integration architecture
 
@@ -295,7 +448,7 @@ today:
 | QR Scanner | ON | Real, via `mobile_scanner` |
 | AI Assistant | ON | Real, but rule-based — not a generative model |
 | DigiLocker | OFF | Not implemented — placeholder boundary only |
-| Real Threat Intelligence | OFF | Would replace `DemoThreatIntel`'s lists |
+| Real Threat Intelligence | OFF | Wired end-to-end but needs `THREAT_INTEL_BACKEND_URL` pointed at a real backend proxy — see [Threat intelligence limitations](#threat-intelligence-limitations) |
 | Government API Integration | OFF | Would replace the mock case repository |
 
 ## Security & scope limitations
@@ -310,6 +463,13 @@ today:
 - The "AI-assisted" complaint summary and "Ask Rakshak" assistant are
   rule-based/template-based; they never invent facts and are always
   labelled "review required".
+- Rakshak cannot force Android to route every http/https link to it — see
+  [Android link interception](#android-link-interception) for the real
+  platform limitation and how the app explains it to the user instead of
+  overclaiming.
+- Location is one-shot and local-only (see [Location](#location)) — never
+  continuously tracked, never uploaded, and never conflated with the
+  citizen profile's registered address/jurisdiction in the UI.
 - This build has not been tested against a real Android SDK/toolchain in
   the environment that produced it (no Android SDK was available); CI
   (Codemagic) is expected to be the first environment that actually

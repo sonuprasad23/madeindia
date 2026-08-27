@@ -51,4 +51,4 @@ app.*.map.json
 android/key.properties
 *.keystore
 *.jks
-
+webprompt.txt

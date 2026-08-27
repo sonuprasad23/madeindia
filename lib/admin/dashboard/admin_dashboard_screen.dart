@@ -11,6 +11,7 @@ import '../../data/repositories/admin_repository.dart';
 import '../../data/repositories/case_repository.dart';
 import '../../data/repositories/evidence_repository.dart';
 import '../../data/repositories/link_repository.dart';
+import '../../features/location/current_location_controller.dart';
 
 /// Synthetic baseline counts representing a larger simulated user base —
 /// clearly demo data, blended with live counts from this session's actual
@@ -104,12 +105,154 @@ class AdminDashboardScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: Spacing.md),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: _LinkChecksBreakdownCard(links: links)),
+              const SizedBox(width: Spacing.md),
+              const Expanded(child: _LocationStatisticsCard()),
+            ],
+          ),
+          const SizedBox(height: Spacing.md),
           Text(
             'All figures on this screen are synthetic demo data blended with this session\'s activity — not connected to a real user base.',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LinkChecksBreakdownCard extends StatelessWidget {
+  const _LinkChecksBreakdownCard({required this.links});
+  final List<LinkCheckResult> links;
+
+  static const _baseline = {
+    RiskLevel.safe: 30,
+    RiskLevel.suspicious: 8,
+    RiskLevel.dangerous: 4,
+    RiskLevel.unknown: 3,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final counts = {
+      for (final level in RiskLevel.values) level: _baseline[level] ?? 0,
+    };
+    for (final l in links) {
+      counts[l.riskLevel] = (counts[l.riskLevel] ?? 0) + 1;
+    }
+    final total = counts.values.fold(0, (a, b) => a + b);
+
+    return RakshakCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Link Checks',
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Total: $total',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: Spacing.sm),
+          for (final level in RiskLevel.values)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                children: [
+                  Text(level.emoji),
+                  const SizedBox(width: Spacing.sm),
+                  Expanded(
+                    child: Text(
+                      level.shortLabel,
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ),
+                  Text(
+                    '${counts[level]}',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Aggregated/demo only — never shows a precise per-user location. The
+/// only real signal is which STATE this device's own location (if shared)
+/// falls into, folded into a synthetic state-level distribution.
+class _LocationStatisticsCard extends ConsumerWidget {
+  const _LocationStatisticsCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final location = ref.watch(currentLocationProvider).info;
+
+    final states = <String, int>{
+      'Maharashtra': 412,
+      'Gujarat': 287,
+      'Karnataka': 233,
+      'Delhi (NCT)': 198,
+      'Uttar Pradesh': 176,
+    };
+    if (location?.state != null) {
+      states[location!.state!] = (states[location.state!] ?? 0) + 1;
+    }
+    final sorted = states.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    return RakshakCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Location Statistics',
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Aggregated by state only — never exact coordinates',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: Spacing.sm),
+          for (final entry in sorted.take(5))
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(entry.key, style: theme.textTheme.bodyMedium),
+                  ),
+                  Text(
+                    '${entry.value}',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );

@@ -34,8 +34,16 @@ class StorageKeys {
   static const String linkProtectionEnabled =
       'settings.link_protection_enabled';
   static const String safeViewerDefault = 'settings.safe_viewer_default';
+  static const String warnAboutSuspiciousLinks =
+      'settings.warn_about_suspicious_links';
+  static const String openSafeLinksAutomatically =
+      'settings.open_safe_links_automatically';
+  static const String showRiskExplanations = 'settings.show_risk_explanations';
   static const String onboardingComplete = 'app.onboarding_complete';
   static const String currentUserId = 'app.current_user_id';
   static const String adminSessionActive = 'admin.session_active';
   static const String featureFlagsOverride = 'admin.feature_flags_override';
+  static const String hasPromptedLocationBefore =
+      'location.has_prompted_before';
+  static const String savedLocationInfo = 'location.saved_info';
 }

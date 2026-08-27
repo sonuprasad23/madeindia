@@ -13,6 +13,7 @@ import '../../data/models/notification_item.dart';
 import '../../data/repositories/case_repository.dart';
 import '../../data/repositories/citizen_profile_repository.dart';
 import '../../data/repositories/notification_repository.dart';
+import '../location/location_card.dart';
 import '../prevention/protection_settings_controller.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -188,6 +189,9 @@ class DashboardScreen extends ConsumerWidget {
                 ),
               ],
             ),
+            const SizedBox(height: Spacing.xl),
+
+            const LocationCard(),
             const SizedBox(height: Spacing.xl),
 
             RakshakSectionHeader(

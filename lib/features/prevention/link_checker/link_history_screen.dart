@@ -8,6 +8,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/rakshak_states.dart';
 import '../../../core/widgets/rakshak_status.dart';
 import '../../../core/widgets/rakshak_surfaces.dart';
+import '../../../data/models/link_check_result.dart';
 import '../../../data/repositories/link_repository.dart';
 
 class LinkHistoryScreen extends ConsumerWidget {
@@ -59,7 +60,11 @@ class LinkHistoryScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              AppFormatters.dateTime(item.checkedAt),
+                              [
+                                AppFormatters.dateTime(item.checkedAt),
+                                if (item.sourceApp != null)
+                                  'via ${item.sourceApp}',
+                              ].join(' • '),
                               style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(
                                     color: Theme.of(
@@ -67,6 +72,19 @@ class LinkHistoryScreen extends ConsumerWidget {
                                     ).colorScheme.onSurfaceVariant,
                                   ),
                             ),
+                            if (item.userAction != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: Text(
+                                  'Action: ${item.userAction!.label}',
+                                  style: Theme.of(context).textTheme.labelSmall
+                                      ?.copyWith(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
+                                      ),
+                                ),
+                              ),
                           ],
                         ),
                       ),

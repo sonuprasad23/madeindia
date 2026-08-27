@@ -8,6 +8,7 @@ class AppRoutes {
   static const String cases = '/cases';
   static const String profile = '/profile';
 
+  static const String linkGateway = '/protect/link-gateway';
   static const String linkChecker = '/protect/link-checker';
   static const String linkCheckerResult = '/protect/link-checker/result';
   static const String linkHistory = '/protect/link-history';

@@ -1,6 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <application
         android:label="Rakshak"
         android:name="${applicationName}"
@@ -27,11 +29,30 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
             <!-- Lets a user "Share" a URL from Chrome/WhatsApp/etc. into Rakshak,
-                 which opens the Link Checker with that URL pre-filled. -->
+                 which opens the Link Security Gateway with that URL pre-filled. -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <data android:mimeType="text/plain"/>
+            </intent-filter>
+            <!-- Registers Rakshak as an available HTTP/HTTPS link handler.
+                 Deliberately NOT android:autoVerify="true": this repo has no
+                 real domain to publish a Digital Asset Links (assetlinks.json)
+                 file for, so Android cannot cryptographically verify Rakshak
+                 as an App Link handler. Without verification, Android will
+                 not silently make Rakshak the automatic handler for every
+                 http/https link — the user must explicitly pick Rakshak from
+                 the "Open with" chooser, or set it manually as the preferred
+                 handler in Settings > Apps > Rakshak > Open by default. This
+                 is a real Android platform limitation, not a bug — see the
+                 "Enable Link Protection" flow in Settings, which explains
+                 this to the user and deep-links into that Settings screen. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="http"/>
+                <data android:scheme="https"/>
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
@@ -49,6 +70,14 @@
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
+        </intent>
+        <!-- Needed on Android 11+ package-visibility rules so Rakshak can
+             find the device's other browser(s) when building an "open
+             externally" chooser that excludes itself (see MainActivity.kt). -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <category android:name="android.intent.category.BROWSABLE"/>
+            <data android:scheme="https"/>
         </intent>
     </queries>
 </manifest>

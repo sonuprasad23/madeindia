@@ -16,6 +16,18 @@ extension RiskLevelX on RiskLevel {
     RiskLevel.unknown => 'Unable to determine',
   };
 
+  /// The longer, plain-language explanation shown under the result badge.
+  /// Wording is deliberately hedged — never a certainty claim.
+  String get description => switch (this) {
+    RiskLevel.safe => 'No known threats detected.',
+    RiskLevel.suspicious =>
+      'This URL contains indicators commonly associated with suspicious activity.',
+    RiskLevel.dangerous =>
+      'Known or strongly suspected malicious activity was detected.',
+    RiskLevel.unknown =>
+      'We could not establish sufficient information about this URL.',
+  };
+
   String get shortLabel => switch (this) {
     RiskLevel.safe => 'Safe',
     RiskLevel.suspicious => 'Suspicious',

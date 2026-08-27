@@ -27,6 +27,16 @@ class LinkRepository extends Notifier<List<LinkCheckResult>> {
     await _store.save(state);
   }
 
+  /// Fills in what the user ultimately did with an already-recorded check
+  /// (opened in browser, viewed safely, etc.) so Link History reads as a
+  /// real audit trail rather than just a list of verdicts.
+  Future<void> recordAction(String id, LinkUserAction action) async {
+    state = state
+        .map((r) => r.id == id ? r.copyWith(userAction: action) : r)
+        .toList();
+    await _store.save(state);
+  }
+
   Future<void> clear() async {
     state = [];
     await _store.save(state);

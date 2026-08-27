@@ -7,7 +7,7 @@ import 'core/localization/language_controller.dart';
 import 'core/routing/app_router.dart';
 import 'core/routing/app_routes.dart';
 import 'core/services/app_providers.dart';
-import 'core/services/share_intent_service.dart';
+import 'core/services/incoming_link_service.dart';
 import 'core/storage/local_storage_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
@@ -32,25 +32,31 @@ class RakshakApp extends ConsumerStatefulWidget {
 }
 
 class _RakshakAppState extends ConsumerState<RakshakApp> {
-  final _shareIntentService = ShareIntentService();
+  final _incomingLinkService = IncomingLinkService();
 
   @override
   void initState() {
     super.initState();
-    _wireShareIntent();
+    _wireIncomingLinks();
   }
 
-  Future<void> _wireShareIntent() async {
-    final initial = await _shareIntentService.consumeInitialSharedText();
-    if (initial != null && initial.isNotEmpty) {
-      _openSharedText(initial);
+  Future<void> _wireIncomingLinks() async {
+    final initial = await _incomingLinkService.consumeInitialLink();
+    if (initial != null && initial.url.isNotEmpty) {
+      _openIncomingLink(initial);
     }
-    _shareIntentService.sharedTextStream.listen(_openSharedText);
+    _incomingLinkService.incomingLinkStream.listen(_openIncomingLink);
   }
 
-  void _openSharedText(String text) {
+  /// Every link that arrives from outside Rakshak — tapped in another app
+  /// or shared in — goes through the Link Security Gateway first. Nothing
+  /// is opened or analyzed automatically just because a link arrived.
+  void _openIncomingLink(IncomingLinkEvent event) {
     final router = ref.read(goRouterProvider);
-    router.push(AppRoutes.linkChecker, extra: text);
+    router.push(
+      AppRoutes.linkGateway,
+      extra: {'url': event.url, 'sourceApp': event.sourceAppLabel},
+    );
   }
 
   @override

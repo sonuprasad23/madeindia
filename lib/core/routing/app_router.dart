@@ -23,6 +23,7 @@ import '../../features/incidents/incident_form_screen.dart';
 import '../../features/notifications/notifications_screen.dart';
 import '../../features/prevention/awareness/awareness_screen.dart';
 import '../../features/prevention/link_checker/link_checker_screen.dart';
+import '../../features/prevention/link_checker/link_gateway_screen.dart';
 import '../../features/prevention/link_checker/link_history_screen.dart';
 import '../../features/prevention/link_checker/link_result_screen.dart';
 import '../../features/prevention/prevention_home_screen.dart';
@@ -77,9 +78,27 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
 
       GoRoute(
+        path: AppRoutes.linkGateway,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, String?>;
+          return LinkGatewayScreen(
+            url: extra['url']!,
+            sourceAppLabel: extra['sourceApp'],
+          );
+        },
+      ),
+      GoRoute(
         path: AppRoutes.linkChecker,
-        builder: (context, state) =>
-            LinkCheckerScreen(initialUrl: state.extra as String?),
+        builder: (context, state) {
+          final extra = state.extra;
+          if (extra is LinkCheckerLaunchArgs) {
+            return LinkCheckerScreen(
+              initialUrl: extra.url,
+              sourceApp: extra.sourceApp,
+            );
+          }
+          return LinkCheckerScreen(initialUrl: extra as String?);
+        },
       ),
       GoRoute(
         path: AppRoutes.linkCheckerResult,
