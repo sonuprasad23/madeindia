@@ -46,4 +46,6 @@ class StorageKeys {
   static const String hasPromptedLocationBefore =
       'location.has_prompted_before';
   static const String savedLocationInfo = 'location.saved_info';
+  static const String hasPromptedBrowserRoleOnFirstLaunch =
+      'app.has_prompted_browser_role_on_first_launch';
 }

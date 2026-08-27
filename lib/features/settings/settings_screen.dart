@@ -9,6 +9,7 @@ import '../../core/theme/theme_controller.dart';
 import '../../core/widgets/rakshak_button.dart';
 import '../../core/widgets/rakshak_surfaces.dart';
 import '../location/current_location_controller.dart';
+import '../prevention/browser_role_controller.dart';
 import '../prevention/protection_settings_controller.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -22,6 +23,7 @@ class SettingsScreen extends ConsumerWidget {
     final locale = ref.watch(languageProvider);
     final protection = ref.watch(protectionSettingsProvider);
     final location = ref.watch(currentLocationProvider);
+    final isDefaultBrowser = ref.watch(browserRoleControllerProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -65,12 +67,43 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: Spacing.md),
+                Row(
+                  children: [
+                    Icon(
+                      isDefaultBrowser == true
+                          ? Icons.check_circle
+                          : Icons.info_outline_rounded,
+                      size: 18,
+                      color: theme.colorScheme.onSecondaryContainer,
+                    ),
+                    const SizedBox(width: Spacing.sm),
+                    Expanded(
+                      child: Text(
+                        switch (isDefaultBrowser) {
+                          true => 'Rakshak is currently your default browser.',
+                          false =>
+                            'Rakshak is not currently your default browser.',
+                          null => 'Checking current status…',
+                        },
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: theme.colorScheme.onSecondaryContainer,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: Spacing.md),
                 RakshakButton(
-                  label: 'Set Rakshak as Default Browser',
+                  label: isDefaultBrowser == true
+                      ? 'Already Set as Default Browser'
+                      : 'Set Rakshak as Default Browser',
                   icon: Icons.shield_outlined,
                   expand: false,
                   onPressed: () async {
-                    final outcome = await _systemActions.requestBrowserRole();
+                    final outcome = await ref
+                        .read(browserRoleControllerProvider.notifier)
+                        .requestRole();
                     if (!context.mounted) return;
                     final message = switch (outcome) {
                       BrowserRoleOutcome.granted =>

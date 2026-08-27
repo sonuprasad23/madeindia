@@ -77,6 +77,21 @@ class SystemActionsService {
     }
   }
 
+  /// Reports whether Rakshak currently holds the Default Browser role —
+  /// a pure status check with no system dialog, so Settings can show
+  /// "Rakshak is your default browser" without re-asking. False on
+  /// non-Android platforms, API < 29, or if the role isn't exposed.
+  Future<bool> isDefaultBrowser() async {
+    try {
+      final result = await _channel.invokeMethod<bool>('isDefaultBrowser');
+      return result ?? false;
+    } on MissingPluginException {
+      return false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
   /// Opens the Android Settings screen for managing which app opens links
   /// by default (API 31+), falling back to the app-info screen on older
   /// versions. Returns false on non-Android platforms. Kept as a manual

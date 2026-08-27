@@ -5,6 +5,7 @@ import '../../../core/services/feature_flags_controller.dart';
 import '../../../data/repositories/admin_repository.dart';
 import 'backend_proxy_threat_intelligence_provider.dart';
 import 'link_analysis_service.dart';
+import 'link_reachability_service.dart';
 import 'link_risk_engine.dart';
 import 'threat_intelligence_provider.dart';
 
@@ -35,4 +36,10 @@ final linkAnalysisServiceProvider = Provider<LinkAnalysisService>((ref) {
     adminOverridesProvider: () => readThreatDomainOverrides(ref),
     threatIntelligenceProvider: ref.watch(threatIntelligenceProviderProvider),
   );
+});
+
+final linkReachabilityServiceProvider = Provider<LinkReachabilityService>((
+  ref,
+) {
+  return LinkReachabilityService();
 });

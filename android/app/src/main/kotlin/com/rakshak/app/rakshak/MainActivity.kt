@@ -166,6 +166,7 @@ class MainActivity : FlutterActivity() {
                     result.success(openLinkHandlerSettings())
                 }
                 "requestBrowserRole" -> requestBrowserRole(result)
+                "isDefaultBrowser" -> result.success(isDefaultBrowser())
                 else -> result.notImplemented()
             }
         }
@@ -285,5 +286,19 @@ class MainActivity : FlutterActivity() {
             openLinkHandlerSettings()
             result.success("unavailable")
         }
+    }
+
+    /**
+     * Reports whether Rakshak currently holds the Default Browser role —
+     * a pure status check with no side effects and no system dialog, used
+     * to show "Rakshak is your default browser" in Settings without
+     * asking again. False (never throws) below API 29 or if the role
+     * isn't exposed on this device.
+     */
+    private fun isDefaultBrowser(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return false
+        val roleManager = getSystemService(RoleManager::class.java) ?: return false
+        if (!roleManager.isRoleAvailable(RoleManager.ROLE_BROWSER)) return false
+        return roleManager.isRoleHeld(RoleManager.ROLE_BROWSER)
     }
 }

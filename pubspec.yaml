@@ -74,6 +74,22 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+# Rakshak's real launcher icon (see BrandConfig / assets/branding/ for the
+# source SVGs this was rasterized from). Regenerate with:
+#   dart run flutter_launcher_icons
+flutter_launcher_icons:
+  android: "launcher_icon"
+  image_path: "assets/branding/rakshak_icon_1024.png"
+  min_sdk_android: 24
+  adaptive_icon_background: "#0B2545"
+  adaptive_icon_foreground: "assets/branding/rakshak_icon_foreground_1024.png"
+  web:
+    generate: true
+    image_path: "assets/branding/rakshak_icon_1024.png"
+    background_color: "#0B2545"
+    theme_color: "#0B2545"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

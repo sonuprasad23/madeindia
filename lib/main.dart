@@ -11,6 +11,7 @@ import 'core/services/incoming_link_service.dart';
 import 'core/storage/local_storage_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
+import 'features/prevention/browser_role_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,6 +39,14 @@ class _RakshakAppState extends ConsumerState<RakshakApp> {
   void initState() {
     super.initState();
     _wireIncomingLinks();
+    // Runs once ever, after the first frame so the system dialog never
+    // races the app's own UI. Whether the user accepts, declines, or the
+    // role is unavailable on this device, the app continues normally.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref
+          .read(browserRoleControllerProvider.notifier)
+          .maybePromptOnFirstLaunch();
+    });
   }
 
   Future<void> _wireIncomingLinks() async {

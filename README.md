@@ -69,6 +69,13 @@ investigation") rather than guarantees.
 - **Design system**: `lib/core/widgets/` (`RakshakButton`, `RakshakCard`,
   `RakshakRiskBadge`, `RakshakTimeline`, empty/error/loading states, etc.)
   plus centralized theme tokens in `lib/core/theme/`.
+- **Branding**: `assets/branding/*.svg` are the source-of-truth logo marks
+  (rendered in-app via `RakshakLogo`/`flutter_svg`, covered by
+  `test/widget/branding_assets_test.dart`). The real Android launcher icon
+  (adaptive icon + all mipmap densities) and web favicon/PWA icons are
+  generated from these via `flutter_launcher_icons` — regenerate with
+  `dart run flutter_launcher_icons` after editing the source SVGs (see the
+  `flutter_launcher_icons:` block in `pubspec.yaml`).
 
 The architecture is intentionally layered so a mock service can be swapped
 for a real one without touching feature UI — see the three sections below
@@ -86,6 +93,11 @@ specific seams.
   anything loads — plus Share-to-Rakshak from any app. Both go through one
   native `MainActivity.kt` bridge — no third-party plugin needed.
 - QR scanner (URL / plain text / UPI payment payloads).
+- A real "analyzing" state (multi-step progress text + progress bar) while
+  a check runs, and a live "Demo connectivity check" on the result screen
+  (`LinkReachabilityService`) reporting whether the destination actually
+  responds right now — a genuine network probe, separate from the
+  security verdict, and never attempted for links marked dangerous.
 - Demo Safe Viewer: an in-app WebView with an explicit risk gate, clearly
   labelled as a demo implementation, not full remote browser isolation.
 - Link history (URL, domain, risk, reasons, source app, and what the user
@@ -374,6 +386,19 @@ any time from the same Settings screen — Rakshak cannot make this
 permanent or hide the setting. Rakshak does **not** use Accessibility
 Services and does **not** monitor other apps, clipboard, or browsing
 history — only Android's standard intent/role/default-handler mechanisms.
+
+**First-launch prompt.** There is no way for an app to intervene in
+Android's own install flow, but the closest achievable equivalent is
+wired up: the very first time Rakshak is opened after install, it
+proactively shows the Default Browser role dialog once
+(`BrowserRoleController.maybePromptOnFirstLaunch`, gated by a persisted
+`hasPromptedBrowserRoleOnFirstLaunch` flag so it never asks again). The
+app continues normally regardless of the outcome — accepted, declined, or
+unavailable on that device — nothing blocks on this. `Settings → Link
+Protection` also shows the live current status ("Rakshak is currently
+your default browser" / "not currently…"), refreshed after every attempt,
+via `SystemActionsService.isDefaultBrowser` (a pure status read, no
+dialog).
 
 ## Safe Viewer architecture
 

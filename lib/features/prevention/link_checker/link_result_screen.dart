@@ -20,6 +20,8 @@ import '../../../data/repositories/evidence_repository.dart';
 import '../../../data/repositories/link_repository.dart';
 import '../../../data/repositories/notification_repository.dart';
 import '../protection_settings_controller.dart';
+import 'link_checker_providers.dart';
+import 'link_reachability_service.dart';
 
 class LinkResultScreen extends ConsumerStatefulWidget {
   const LinkResultScreen({super.key, required this.result});
@@ -32,6 +34,7 @@ class LinkResultScreen extends ConsumerStatefulWidget {
 
 class _LinkResultScreenState extends ConsumerState<LinkResultScreen> {
   bool _autoOpenAttempted = false;
+  ReachabilityStatus _reachability = ReachabilityStatus.checking;
 
   LinkCheckResult get result => widget.result;
 
@@ -43,6 +46,14 @@ class _LinkResultScreenState extends ConsumerState<LinkResultScreen> {
         settings.openSafeLinksAutomatically) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _autoOpenIfSafe());
     }
+    _checkReachability();
+  }
+
+  Future<void> _checkReachability() async {
+    final status = await ref
+        .read(linkReachabilityServiceProvider)
+        .check(result.normalizedUrl, result.riskLevel);
+    if (mounted) setState(() => _reachability = status);
   }
 
   Future<void> _autoOpenIfSafe() async {
@@ -200,6 +211,8 @@ class _LinkResultScreenState extends ConsumerState<LinkResultScreen> {
               ],
             ),
           ),
+          const SizedBox(height: Spacing.md),
+          _reachabilityCard(theme),
           const SizedBox(height: Spacing.xl),
           ..._actionsFor(context, ref),
           const SizedBox(height: Spacing.md),
@@ -328,6 +341,67 @@ class _LinkResultScreenState extends ConsumerState<LinkResultScreen> {
       await _recordAction(LinkUserAction.openedAnyway);
       if (context.mounted) await _openExternally(context);
     }
+  }
+
+  Widget _reachabilityCard(ThemeData theme) {
+    final (icon, color) = switch (_reachability) {
+      ReachabilityStatus.checking => (
+        Icons.wifi_find_rounded,
+        theme.colorScheme.onSurfaceVariant,
+      ),
+      ReachabilityStatus.reachable => (
+        Icons.wifi_rounded,
+        theme.colorScheme.tertiary,
+      ),
+      ReachabilityStatus.unreachable => (
+        Icons.wifi_off_rounded,
+        theme.colorScheme.error,
+      ),
+      ReachabilityStatus.skippedDangerous => (
+        Icons.block_rounded,
+        theme.colorScheme.error,
+      ),
+    };
+
+    return Container(
+      padding: const EdgeInsets.all(Spacing.md),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(Radii.md),
+      ),
+      child: Row(
+        children: [
+          if (_reachability == ReachabilityStatus.checking)
+            SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2, color: color),
+            )
+          else
+            Icon(icon, size: 18, color: color),
+          const SizedBox(width: Spacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _reachability.label,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  'Demo connectivity check — separate from the security verdict above.',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _detailRow(BuildContext context, String label, String value) {
